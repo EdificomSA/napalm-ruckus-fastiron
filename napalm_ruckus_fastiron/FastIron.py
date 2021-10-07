@@ -225,7 +225,7 @@ class FastIronDriver(NetworkDriver):
 
     @staticmethod
     def __facts_model(string):
-        model = FastIronDriver.__retrieve_all_locations(string, "Stackable", 0)[0]
+        model = FastIronDriver.__retrieve_all_locations(string, "HW:", 0)[0]
         return model                                # returns the model of the switch
 
     @staticmethod
