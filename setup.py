@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as fs:
 
 setup(
     name="napalm-ruckus-fastiron",
-    version="1.0.26",
+    version="1.0.27",
     packages=find_packages(),
     author="Jesus Mendez",
     author_email="mendezj@staticoverride.us",
@@ -21,7 +21,7 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Operating System :: MacOS',
     ],
-    url="https://github.com/Static0verride/napalm-ruckus-fastiron",
+    url="https://github.com/drobert31/napalm-ruckus-fastiron",
     include_package_data=True,
     install_requires=reqs,
 )

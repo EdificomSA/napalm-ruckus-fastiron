@@ -226,6 +226,8 @@ class FastIronDriver(NetworkDriver):
     @staticmethod
     def __facts_model(string):
         model = FastIronDriver.__retrieve_all_locations(string, "HW:", 0)[0]
+        if "Stackable" in model:
+            model = model.replace("Stackable", "").strip()
         return model                                # returns the model of the switch
 
     @staticmethod
@@ -812,9 +814,15 @@ class FastIronDriver(NetworkDriver):
         my_test = FastIronDriver.__matrix_format(my_input)
 
         for seq in range(0, len(my_test)):
+            try:
+                l_port = my_test[seq][3]
+                hostn = my_test[seq][len(my_test[seq])-1]
+            except:
+                hostn = ""
+            print("Port Hostname", l_port, hostn)
             my_dict.update({my_test[seq][0]: {
-                'hostname': my_test[seq][len(my_test[seq])-1],
-                'port': my_test[seq][3],
+                'hostname': hostn,
+                'port': l_port,
             }})
 
         return my_dict
