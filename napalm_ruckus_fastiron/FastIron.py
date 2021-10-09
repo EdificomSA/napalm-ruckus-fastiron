@@ -54,6 +54,7 @@ class FastIronDriver(NetworkDriver):
         self.rollback_cfg = optional_args.get('rollback_cfg', 'rollback_config.txt')
         self.use_secret = optional_args.get('use_secret', False)
         self.image_type = None
+        self.version = None
 
     def __del__(self):
         """
@@ -82,11 +83,13 @@ class FastIronDriver(NetworkDriver):
                                          secret=secret,
                                          verbose=True)
             self.device.session_preparation()
-            # image_type = self.device.send_command("show version")   # find the image type
-            # if image_type.find("SPS") != -1:
-            #     self.image_type = "Switch"
-            # else:
-            #     self.image_type = "Router"
+            version_output = self.device.send_command("show version")   # find the image type
+            if version_output.find("SPS") != -1:
+                self.image_type = "Switch"
+            else:
+                self.image_type = "Router"
+
+            self.version = FastIronDriver.__facts_os_version(version_output)
 
         except Exception:
             raise ConnectionException("Cannot connect to switch: %s:%s" % (self.hostname,
@@ -106,7 +109,7 @@ class FastIronDriver(NetworkDriver):
         consideration other parameters, e.g.: NETCONF session might not be usable, although the
         underlying SSH session is still open etc.
         """
-        null = chr(0)
+        null = "" # chr(0)
         try:                                # send null byte see if alive
             self.device.send_command(null)
             return {'is_alive': self.device.remote_conn.transport.is_active()}
@@ -294,21 +297,24 @@ class FastIronDriver(NetworkDriver):
     def __get_interface_speed(shw_int_speed):
         speed = list()                                          # creates list
         for val in shw_int_speed:                               # speed words contained and compared
-            if val == 'auto,' or val == '1Gbit,':               # appends speed hat
+            val = val.lower()
+            if val == 'auto,' or val == '1gbit,':               # appends speed hat
                 speed.append(1000)
-            elif val == '10Mbit,':
+            elif val == '10mbit,':
                 speed.append(10)
-            elif val == '100Mbit,':
+            elif val == '100mbit,':
                 speed.append(100)
-            elif val == '2.5Gbit,':
-                speed.append(2500)
-            elif val == '5Gbit,':
+            elif val == '2g,':
+                speed.append(2000)
+            elif val == '2.5gbit,':
                 speed.append(5000)
-            elif val == '10Gbit,':
+            elif val == '5gbit,':
+                speed.append(5000)
+            elif val == '10gbit,':
                 speed.append(10000)
-            elif val == '40Gbit,':
+            elif val == '40gbit,':
                 speed.append(40000)
-            elif val == '100Gbit,':
+            elif val == '100gbit,':
                 speed.append(100000)
             else:
                 raise FastIronDriver.PortSpeedException(val)
@@ -775,19 +781,22 @@ class FastIronDriver(NetworkDriver):
         flap_output = self.device.send_command('show interface | i Port')
         speed_output = self.device.send_command('show interface | i speed')
         nombre = self.device.send_command('show interface | i name')
+
         interfaces = FastIronDriver.__facts_interface_list(int_brief)
         int_up = FastIronDriver.__facts_interface_list(int_brief, pos=1, del_word="Link")
         mac_ad = FastIronDriver.__facts_interface_list(int_brief, pos=9, del_word="MAC")
+
         flapped = FastIronDriver.__port_time(flap_output)
         size = len(interfaces)
 
         is_en = FastIronDriver.__facts_interface_list(int_brief, pos=2, del_word="State")
+
         int_speed = FastIronDriver.__facts_interface_list(speed_output, pos=2)
         actual_spd = FastIronDriver.__get_interface_speed(int_speed)
-
         flapped = FastIronDriver.__get_interfaces_speed(flapped, size)
         actual_spd = FastIronDriver.__get_interfaces_speed(actual_spd, size)
         nombre = FastIronDriver.__get_interface_name(nombre, size)
+
 
         for val in range(0, len(interfaces)):   # TODO check size and converto to napalm format
             my_dict.update({interfaces[val]: {
@@ -1062,6 +1071,13 @@ class FastIronDriver(NetworkDriver):
         The keys of the dictionary represent the IP Addresses of the peers.
         Inner dictionaries do not have yet any available keys.
 
+        si < V8.0.92 :
+        sh ntp ass
+        address         ref clock      st  when  poll reach  delay   offset  disp
+        +~172.20.99.250   172.20.99.248    5    35    64   377  1.446  -2.8859  4.003
+        *~172.26.58.72    172.20.99.248    5    42    64   377  1.668  -8.6629  2.557
+        * synced, # selected, + candidate, - outlayer, x falseticker, ~ configured
+
         Example::
 
             {
@@ -1078,11 +1094,16 @@ class FastIronDriver(NetworkDriver):
         nline = FastIronDriver.__creates_list_of_nlines(output)
         ntp_peers = dict()
         for val in range(len(nline)-1):
-            val = nline[val].replace("~", " ")
-            val = val.split()
-            ntp_peers.update({
-                val[1]: {}
-            })
+            if nline[val].strip() != "":
+                #val = nline[val].replace("~", " ")
+
+                val = nline[val].split()
+                print('--------')
+                print(val[1])
+                print('--------')
+                ntp_peers.update({
+                    val[1]: {}
+                    })
 
         return ntp_peers
 
@@ -1099,11 +1120,11 @@ class FastIronDriver(NetworkDriver):
         nline = FastIronDriver.__creates_list_of_nlines(output)
         ntp_servers = dict()
         for val in range(len(nline)-1):
-            val = nline[val].replace("~", " ")
-            val = val.split()
-            ntp_servers.update({
-                val[2]: {}
-            })
+            if nline[val].strip() != "":
+                val = nline[val].split()
+                ntp_servers.update({
+                    val[1]: {}
+                    })
 
         return ntp_servers
 
