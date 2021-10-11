@@ -32,10 +32,17 @@ from napalm.base.exceptions import ReplaceConfigException, \
 # import napalm.base.constants as c
 # from napalm.base import validate
 from napalm.base import NetworkDriver
-
+from napalm.base.helpers import (
+    canonical_interface_name,
+    transform_lldp_capab,
+    textfsm_extractor,
+)
 
 class FastIronDriver(NetworkDriver):
     """Napalm driver for FastIron."""
+
+    CMD_SHW_LOGG = "show logging host"
+    CMD_SHW_RUN_LOGG = "show run | i logging host"
 
     def __init__(self, hostname, username, password, timeout=60, **optional_args):
         """Constructor."""
@@ -54,7 +61,13 @@ class FastIronDriver(NetworkDriver):
         self.rollback_cfg = optional_args.get('rollback_cfg', 'rollback_config.txt')
         self.use_secret = optional_args.get('use_secret', False)
         self.image_type = None
+
+        # Cache command output
         self.version = None
+        self.show_running_config = None
+        self.show_lag_deployed = None
+        self.show_int = None
+        self.interface_map = None
 
     def __del__(self):
         """
@@ -523,6 +536,7 @@ class FastIronDriver(NetworkDriver):
 
                 temp_list, is_found = FastIronDriver.__compare_blocks(cb_1, config_blocks_2,
                                                                       cmd, symbol)
+                print("---- ", temp_list)
 
                 if is_found == 0:
                     for value in cb_1:
@@ -763,6 +777,86 @@ class FastIronDriver(NetworkDriver):
             'serial_number':  FastIronDriver.__facts_serial(version_output),
             'interface_list':  FastIronDriver.__physical_interface_list(interfaces_up)
         }
+
+    def get_lags(self):
+        result = {}
+
+        if not self.show_lag_deployed:
+            self.show_lag_deployed = self.device.send_command('show lag deployed')
+        info = textfsm_extractor(
+            self, "show_lag_deployed", self.show_lag_deployed
+        )
+        for lag in info:
+            port = 'lag{}'.format(lag['id'])
+            result[port] = {
+                'is_up': True,
+                'is_enabled': True,
+                'description': lag['name'],
+                'last_flapped': -1,
+                'speed': 0,
+                'mac_address': '',
+                'children': self.interfaces_to_list(lag['ports'])
+            }
+
+        return result
+
+    def get_vlans(self):
+        if not self.show_running_config:
+            self.show_running_config = self.device.send_command('show running-config')
+        info = textfsm_extractor(
+            self, "show_running_config_vlan", self.show_running_config
+        )
+
+        result = {}
+        for vlan in info:
+            if (vlan['taggedports'] or vlan['untaggedports']):
+                result[vlan['vlan']] = {
+                    'name': vlan['name'],
+                    'interfaces': self.interface_list_conversion(
+                        vlan['ve'],
+                        vlan['taggedports'],
+                        vlan['untaggedports']
+                    )
+                }
+
+        return result
+
+    def get_logging_hosts(self):
+        """
+        Returns a dictionary of dictionaries. The keys for the first dictionary will be the \
+        position. The inner dictionary will containing the following data for \
+        each host:
+         * host (@IP)
+         * udp port (string)
+        """
+        #CMD_SHW_LOGG = "show logging host"
+
+        my_dict = {}
+        pos = 0
+        logging_in_config = self.device.send_command(self.CMD_SHW_RUN_LOGG)
+        hosts = FastIronDriver.__creates_list_of_nlines(logging_in_config)
+        for host in hosts:
+            if "udp" in host:
+                udp_port = host.split()[4]
+            else:
+                udp_port = "514"
+
+            my_dict.update({pos: {"host": host.split()[2], "udp_port": udp_port}})
+            pos += 1
+
+        return my_dict
+
+    def set_logging_hosts(self, list_hosts=None, clean=False, enable=True):
+        """
+        """
+        print("---------------")
+        if list_hosts:
+            for host in list_hosts:
+                l_h = host.get("host")
+                l_p = host.get("udp_port", "514")
+                print(l_h, l_p)
+
+        return True
 
     def get_interfaces(self):
         """
