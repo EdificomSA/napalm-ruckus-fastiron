@@ -24,6 +24,7 @@ setup(
     # Une description longue, sera affichée pour présenter la lib
     # Généralement on dump le README ici
     long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
 
     classifiers=[
         'Topic :: Utilities',
