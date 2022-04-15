@@ -1,27 +1,42 @@
 """setup.py file."""
 from setuptools import find_packages, setup
 
-__author__ = 'Jesus Mendez <mendezj@staticoverride.us>'
+__author__ = 'Dominique Robert <drobert@free.fr>'
+from napalm_ruckus_fastiron.version import __version__
 
 with open("requirements.txt", "r") as fs:
     reqs = [r for r in fs.read().splitlines()]
 
 setup(
     name="napalm-ruckus-fastiron",
-    version="1.0.27",
-    packages=find_packages(),
-    author="Jesus Mendez",
-    author_email="mendezj@staticoverride.us",
+    # la version du code
+    version=__version__,
+
+    author="Dominique Robert",
+
+    # Votre email, sachant qu'il sera publique visible, avec tous les risques
+    # que ça implique.
+    author_email="drobert@free.fr",
+
+    # Une description courte
     description="Network Automation and Programmability Abstraction Layer with Multivendor support",
+
+    # Une description longue, sera affichée pour présenter la lib
+    # Généralement on dump le README ici
+    long_description=open('README.md').read(),
+
     classifiers=[
         'Topic :: Utilities',
          'Programming Language :: Python',
-         'Programming Language :: Python :: 2',
-         'Programming Language :: Python :: 2.7',
+         'Programming Language :: Python :: 3.7',
         'Operating System :: POSIX :: Linux',
-        'Operating System :: MacOS',
     ],
     url="https://github.com/drobert31/napalm-ruckus-fastiron",
+    # A fournir uniquement si votre licence n'est pas listée dans "classifiers"
+    # ce qui est notre cas
+    license="MIT",
+
+    packages=find_packages(),
     include_package_data=True,
     install_requires=reqs,
 )

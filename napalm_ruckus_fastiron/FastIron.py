@@ -367,7 +367,7 @@ class FastIronDriver(NetworkDriver):
 
     @staticmethod
     def __is_greater(value, threshold):               # compares two values returns true if value
-        if float(value) >= float(threshold):        # is greater or equal to threshold
+        if float(value) >= float(threshold):          # is greater or equal to threshold
             return True
         return False
 
@@ -821,6 +821,10 @@ class FastIronDriver(NetworkDriver):
 
         return result
 
+    def interface_list_conversion(self, Ves, taggedports, untaggedports):
+
+        return {'Ves': Ves, 'tag': taggedports, 'untag': untaggedports}
+
     def get_logging_hosts(self):
         """
         Returns a dictionary of dictionaries. The keys for the first dictionary will be the \
@@ -1028,7 +1032,7 @@ class FastIronDriver(NetworkDriver):
             print("please enter an interface")
             return None
 
-        output = self.device.send_command('show lldp neighbor detail port ' + interface)
+        output = self.device.send_command('show lldp neighbor detail ports ' + interface)
         output = output.replace(':', ' ')
         output = output.replace('"', '')
         output = (output.replace('+', ' '))
@@ -1249,27 +1253,33 @@ class FastIronDriver(NetworkDriver):
         for sentence in nline:
             isbool = False
             # sentence = sentence.split()
-            remote, refid, stra, when, hostpoll, \
-                reach, delay, offset, jitter = sentence.split()
+            SentSplit = sentence.split()
+            if len(SentSplit) == 9:
+                remote, refid, stra, when, hostpoll, \
+                    reach, delay, offset, jitter = SentSplit
+
+            elif len(SentSplit) == 11:
+                #print(SentSplit)
+                remote, adrip, domain, refid, stra, when, hostpoll, \
+                    reach, delay, offset, jitter = SentSplit
+
+            else:
+                # Pas de ligne
+                continue
 
             if "*" in sentence:
                 isbool = True
-
-            # sentence[0] = sentence[0].replace('*', '')
-            # sentence[0] = sentence[0].replace('+', '')
-            # sentence[0] = sentence[0].replace('~', '')
-
-            remote = remote.replace('*', '')
-            remote = remote.replace('+', '')
-            remote = remote.replace('~', '')
+                remote = remote.replace('*', '')
+                remote = remote.replace('+', '')
+                remote = remote.replace('~', '')
 
             my_list.append({
-                'remote': remote,
+                'remote': adrip,
                 'referenceid': refid,
                 'synchronized': isbool,
                 'stratum': int(stra),
                 'type': u'-',
-                'when': int(when),
+                'when': '-' if when == '-' else int(when),
                 'hostpoll': int(hostpoll),
                 'reachability': float(reach),
                 'delay': float(delay),

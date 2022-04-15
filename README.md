@@ -50,7 +50,7 @@ Roapmapped
 
 Requirements
 =======
-- Netmiko v2.0.2
+- Netmiko v3.4.0
 - FastIron v8.0.30
 
 Netmiko methods
@@ -67,3 +67,4 @@ Netmiko methods
 Authors
 =======
  * Jesús Mendez ([mendezj@staticoverride.us](mailto:mendezj@staticoverride.us))
+ * Dominique Robert ([drobert@free.fr](mailto:drobert@free.fr))
