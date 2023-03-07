@@ -329,6 +329,8 @@ class FastIronDriver(NetworkDriver):
                 speed.append(40000)
             elif val == '100gbit,':
                 speed.append(100000)
+            elif val == 'optic-based,':
+                speed.append(10000)
             else:
                 raise FastIronDriver.PortSpeedException(val)
 
