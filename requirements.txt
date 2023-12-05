@@ -1,2 +1,2 @@
-napalm==3.4.0
-netmiko==3.4.0
+napalm~=4.1.0
+netmiko~=4.3.0
