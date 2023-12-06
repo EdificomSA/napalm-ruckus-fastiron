@@ -89,6 +89,8 @@ class FastIronDriver(NetworkDriver):
                 secret = ''
 
             paramiko.Transport._preferred_kex = ('diffie-hellman-group14-sha1', 'diffie-hellman-group1-sha1')
+            # secopts = paramiko.Transport.get_security_options()
+            # secopts.key_types += ['ssh-rsa']
             self.device = ConnectHandler(device_type='ruckus_fastiron',
                                          ip=self.hostname,      # saves device parameters
                                          port=self.port,
