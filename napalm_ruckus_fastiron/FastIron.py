@@ -19,6 +19,7 @@ from __future__ import unicode_literals
 # std libs
 # import sys
 from netmiko import ConnectHandler
+import paramiko
 import socket
 import sys
 # import re
@@ -87,6 +88,7 @@ class FastIronDriver(NetworkDriver):
             else:
                 secret = ''
 
+            paramiko.Transport._preferred_kex = ('diffie-hellman-group14-sha1', 'diffie-hellman-group1-sha1')
             self.device = ConnectHandler(device_type='ruckus_fastiron',
                                          ip=self.hostname,      # saves device parameters
                                          port=self.port,
