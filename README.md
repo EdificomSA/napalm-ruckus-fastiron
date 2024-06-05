@@ -68,3 +68,4 @@ Authors
 =======
  * Jesús Mendez ([mendezj@staticoverride.us](mailto:mendezj@staticoverride.us))
  * Dominique Robert ([drobert@free.fr](mailto:drobert@free.fr))
+ * Yannis Ansermoz ([yannis.ansermoz@edificom.ch](maito:yannis.ansermoz@edificom.ch))
